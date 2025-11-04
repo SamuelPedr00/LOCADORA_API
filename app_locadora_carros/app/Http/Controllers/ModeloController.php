@@ -7,20 +7,18 @@ use Illuminate\Http\Request;
 
 class ModeloController extends Controller
 {
+    private $modelo;
+
+    public function __construct(Modelo $modelo)
+    {
+        $this->modelo = $modelo;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return response()->json($this->modelo->all(), 200);
     }
 
     /**
@@ -28,7 +26,24 @@ class ModeloController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Aplicar a validação
+        $request->validate($this->modelo->rules(), $this->modelo->feedback());
+
+        $imagem = $request->file('imagem');
+        $imagem_urn = $imagem->store('imagem/modelos', 'public');
+
+        // Criar o modelo após a validação
+        $modelo = $this->modelo->create([
+            'marca_id' => $request->marca_id,
+            'nome' => $request->nome,
+            'imagem' => $imagem_urn,
+            'numero_portas' => $request->numero_portas,
+            'lugares' => $request->lugares,
+            'air_bag' => $request->air_bag,
+            'abs' => $request->abs
+        ]);
+
+        return response()->json($modelo, 201);
     }
 
     /**
@@ -38,15 +53,6 @@ class ModeloController extends Controller
     {
         //
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Modelo $modelo)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */
