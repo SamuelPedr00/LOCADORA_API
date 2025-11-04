@@ -7,20 +7,20 @@ use Illuminate\Http\Request;
 
 class MarcaController extends Controller
 {
+
+    private $marca;
+
+    public function __construct(Marca $marca)
+    {
+        $this->marca = $marca;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        $marcas = $this->marca->all();
+        return response()->json($marcas, 200);
     }
 
     /**
@@ -28,38 +28,67 @@ class MarcaController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Aplicar a validação
+        $request->validate($this->marca->rules(), $this->marca->feedback());
+
+        // Criar a marca após a validação
+        $marca = $this->marca->create($request->all());
+
+        return response()->json($marca, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Marca $marca)
+    public function show(int $id)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Marca $marca)
-    {
-        //
+        $marca = $this->marca->find($id);
+        if ($marca == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+        return response()->json($marca, 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Marca $marca)
+    public function update(Request $request, int $id)
     {
-        //
+
+        $marca = $this->marca->find($id);
+        if ($marca == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+
+        if ($request->method() === 'PATCH') {
+            $regrasDinamicas = array();
+
+            foreach ($marca->rules() as $input => $regra) {
+                if (array_key_exists($input, $request->all())) {
+                    $regrasDinamicas[$input] = $regra;
+                }
+            }
+
+            $request->validate($regrasDinamicas, $marca->feedback());
+        } else {
+            $request->validate($marca->rules(), $marca->feedback());
+        }
+
+        $marca = $marca->update($request->all());
+        return response()->json($marca, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Marca $marca)
+    public function destroy(int $id)
     {
-        //
+        $marca = $this->marca->find($id);
+        if ($marca == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+        $marca->delete();
+
+        return response()->json(['msg' => 'Marca removida com sucesso!']);
     }
 }
