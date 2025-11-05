@@ -65,9 +65,19 @@ class MarcaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        $marca = $this->marca->with('modelos')->find($id);
+        // Validação dos atributos (opcional mas recomendado)
+        $atributos = $request->atributos ?? '*';
+
+        if ($request->has('atributos_modelos')) {
+            $atributos_modelos = $request->atributos_modelos;
+            $marca = $this->marca->with('modelos:' . $atributos_modelos)->selectRaw($atributos)->find($id);
+        } else {
+            // Construir a query com os atributos específicos
+            $marca = $this->marca->with('modelos')->selectRaw($atributos)->find($id);
+        }
+
         if ($marca == null) {
             return response()->json(['error' => 'Pesquisa não encontrada'], 404);
         }
