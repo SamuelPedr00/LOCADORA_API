@@ -18,7 +18,6 @@ class Modelo extends Model
             'lugares' => 'required|integer|digits_between:1,20',
             'air_bag' => 'required|boolean',
             'abs' => 'required|boolean'
-
         ];
     }
 

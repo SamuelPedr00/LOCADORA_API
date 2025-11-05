@@ -85,6 +85,7 @@ class ModeloController extends Controller
         $dadosAtualizacao = $request->only([
             'marca_id',
             'nome',
+            'imagem',
             'numero_portas',
             'lugares',
             'air_bag',
