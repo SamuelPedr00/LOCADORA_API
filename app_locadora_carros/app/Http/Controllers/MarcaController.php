@@ -61,12 +61,13 @@ class MarcaController extends Controller
      */
     public function update(Request $request, int $id)
     {
-
         $marca = $this->marca->find($id);
+
         if ($marca == null) {
             return response()->json(['error' => 'Pesquisa não encontrada'], 404);
         }
 
+        // Validação dinâmica para PATCH ou completa para PUT
         if ($request->method() === 'PATCH') {
             $regrasDinamicas = array();
 
@@ -80,16 +81,35 @@ class MarcaController extends Controller
         } else {
             $request->validate($marca->rules(), $marca->feedback());
         }
-        if ($request->file('imagem')) {
-            Storage::disk('public')->delete($marca->imagem);
+
+        // Preparar dados para atualização
+        $dadosAtualizacao = [];
+
+        // Processar imagem apenas se foi enviada
+        if ($request->hasFile('imagem')) {
+            // Deletar imagem antiga se existir
+            if ($marca->imagem) {
+                Storage::disk('public')->delete($marca->imagem);
+            }
+
+            $imagem = $request->file('imagem');
+            $imagem_urn = $imagem->store('imagens', 'public');
+            $dadosAtualizacao['imagem'] = $imagem_urn;
         }
 
-        $imagem = $request->file('imagem');
-        $imagem_urn = $imagem->store('imagem', 'public');
-        $marca = $marca->update([
-            'nome' => $request->nome,
-            'imagem' => $imagem_urn
-        ]);
+        // Adicionar nome apenas se foi enviado (para PATCH)
+        if ($request->has('nome')) {
+            $dadosAtualizacao['nome'] = $request->nome;
+        }
+
+        // Atualizar apenas se houver dados
+        if (!empty($dadosAtualizacao)) {
+            $marca->update($dadosAtualizacao);
+        }
+
+        // Recarregar o modelo para obter dados atualizados
+        $marca->refresh();
+
         return response()->json($marca, 200);
     }
 
