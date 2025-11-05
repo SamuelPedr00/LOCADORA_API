@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Storage;
 use App\Models\Modelo;
 use Illuminate\Http\Request;
 
@@ -49,23 +50,77 @@ class ModeloController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Modelo $modelo)
+    public function show(int $id)
     {
-        //
+        $modelo = $this->modelo->find($id);
+        if ($modelo == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+        return response()->json($modelo, 200);
     }
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Modelo $modelo)
+    public function update(Request $request, int $id)
     {
-        //
+        $modelo = $this->modelo->find($id);
+        if ($modelo == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+
+        // Validação dinâmica para PATCH ou completa para PUT
+        if ($request->method() === 'PATCH') {
+            $regrasDinamicas = array();
+            foreach ($modelo->rules() as $input => $regra) {
+                if (array_key_exists($input, $request->all())) {
+                    $regrasDinamicas[$input] = $regra;
+                }
+            }
+            $request->validate($regrasDinamicas, $modelo->feedback());
+        } else {
+            $request->validate($modelo->rules(), $modelo->feedback());
+        }
+
+        // Preparar dados para atualização
+        $dadosAtualizacao = $request->only([
+            'marca_id',
+            'nome',
+            'numero_portas',
+            'lugares',
+            'air_bag',
+            'abs'
+        ]);
+
+        // Processar imagem apenas se foi enviada
+        if ($request->hasFile('imagem')) {
+            // Deletar imagem antiga
+            if ($modelo->imagem) {
+                Storage::disk('public')->delete($modelo->imagem);
+            }
+
+            // Armazenar nova imagem
+            $imagem = $request->file('imagem');
+            $dadosAtualizacao['imagem'] = $imagem->store('imagem', 'public');
+        }
+
+        // Atualizar apenas os campos enviados (importante para PATCH)
+        $modelo->update($dadosAtualizacao);
+
+        return response()->json($modelo, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Modelo $modelo)
+    public function destroy(int $id)
     {
-        //
+        $modelo = $this->modelo->find($id);
+        if ($modelo == null) {
+            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        }
+        Storage::disk('public')->delete($modelo->imagem);
+        $modelo->delete();
+
+        return response()->json(['msg' => 'Marca removida com sucesso!']);
     }
 }
