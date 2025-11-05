@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Repositories\MarcaRepository;
+use App\Repositories\IMarcaRepository;
 use Illuminate\Http\Request;
 
 class MarcaService
 {
     protected $marcaRepository;
 
-    public function __construct(MarcaRepository $marcaRepository)
+    public function __construct(IMarcaRepository $marcaRepository)
     {
         $this->marcaRepository = $marcaRepository;
     }
