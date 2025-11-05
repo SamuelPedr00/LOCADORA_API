@@ -3,42 +3,27 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
-use App\Models\Marca;
+use App\Services\MarcaService;
 use Illuminate\Http\Request;
+use App\Models\Marca;
 
 class MarcaController extends Controller
 {
+    protected $marcaService;
+    protected $marca;
 
-    private $marca;
-
-    public function __construct(Marca $marca)
+    public function __construct(MarcaService $marcaService, Marca $marca)
     {
+        $this->marcaService = $marcaService;
         $this->marca = $marca;
     }
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index(Request $request)
     {
-        $query = $this->marca;
-
-        // Aplica o select nos atributos da marca primeiro
-        if ($request->has('atributos')) {
-            $atributos = $request->atributos;
-            $query = $query->selectRaw($atributos);
+        $marcas = $this->marcaService->listarMarcas($request);
+        if ($marcas->isEmpty()) {
+            return response()->json(['message' => 'Nenhuma marca encontrada', 'data' => []], 200);
         }
-
-        // Carrega os modelos relacionados
-        if ($request->has('atributos_modelos')) {
-            $atributos_modelos = $request->atributos_modelos;
-            // Inclui 'id' para garantir que o relacionamento funcione
-            $query = $query->with('modelos:id,' . $atributos_modelos);
-        } else {
-            $query = $query->with('modelos');
-        }
-
-        $marcas = $query->get();
-
         return response()->json($marcas, 200);
     }
 
