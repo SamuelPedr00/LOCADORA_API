@@ -17,9 +17,24 @@ class ModeloController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json($this->modelo->with('marca')->get(), 200);
+
+        if ($request->has('atributos_marca')) {
+            $atributos_marca = $request->atributos_marca;
+            $query = $this->modelo->with('marca:' . $atributos_marca);
+        } else {
+            $query = $this->modelo->with('marca');
+        }
+
+        if ($request->has('atributos')) {
+            $atributos = $request->atributos;
+            $query->selectRaw($atributos);
+        }
+
+        $modelos = $query->get();
+
+        return response()->json($modelos, 200);
     }
 
     /**
@@ -50,12 +65,25 @@ class ModeloController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        $modelo = $this->modelo->find($id);
+        // Validação dos atributos (opcional mas recomendado)
+        $atributos = $request->atributos ?? '*';
+
+        if ($request->has('atributos_marca')) {
+            $atributos_marca = $request->atributos_marca;
+            $modelo = $this->modelo->with('marca:' . $atributos_marca)->selectRaw($atributos)->find($id);
+        } else {
+            // Construir a query com os atributos específicos
+            $modelo = $this->modelo->with('marca')->selectRaw($atributos)->find($id);
+        }
+
+
+
         if ($modelo == null) {
             return response()->json(['error' => 'Pesquisa não encontrada'], 404);
         }
+
         return response()->json($modelo, 200);
     }
     /**
@@ -116,6 +144,8 @@ class ModeloController extends Controller
     public function destroy(int $id)
     {
         $modelo = $this->modelo->find($id);
+
+
         if ($modelo == null) {
             return response()->json(['error' => 'Pesquisa não encontrada'], 404);
         }
