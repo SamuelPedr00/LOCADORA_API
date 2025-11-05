@@ -3,8 +3,9 @@
 namespace App\Repositories;
 
 use App\Models\Marca;
+use App\Repositories\IMarcaRepository;
 
-class MarcaRepository
+class MarcaRepository implements IMarcaRepository
 {
     protected $model;
 
