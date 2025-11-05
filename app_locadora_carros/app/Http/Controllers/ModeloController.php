@@ -19,7 +19,7 @@ class ModeloController extends Controller
      */
     public function index()
     {
-        return response()->json($this->modelo->all(), 200);
+        return response()->json($this->modelo->with('marca')->get(), 200);
     }
 
     /**
@@ -63,7 +63,7 @@ class ModeloController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $modelo = $this->modelo->find($id);
+        $modelo = $this->modelo->with('marca')->find($id);
         if ($modelo == null) {
             return response()->json(['error' => 'Pesquisa não encontrada'], 404);
         }
@@ -85,6 +85,7 @@ class ModeloController extends Controller
         $dadosAtualizacao = $request->only([
             'marca_id',
             'nome',
+            'imagem',
             'numero_portas',
             'lugares',
             'air_bag',
