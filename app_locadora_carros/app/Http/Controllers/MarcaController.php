@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\MarcaService;
 use Illuminate\Http\Request;
 use App\Models\Marca;
+use Illuminate\Support\Facades\Log;
 
 class MarcaController extends Controller
 {
@@ -20,11 +21,29 @@ class MarcaController extends Controller
 
     public function index(Request $request)
     {
-        $marcas = $this->marcaService->listarMarcas($request);
-        if ($marcas->isEmpty()) {
-            return response()->json(['message' => 'Nenhuma marca encontrada', 'data' => []], 200);
+        try {
+            $marcas = $this->marcaService->listarMarcas($request);
+
+            if ($marcas->isEmpty()) {
+                return response()->json([
+                    'message' => 'Nenhuma marca encontrada',
+                    'data' => []
+                ], 200);
+            }
+
+            return response()->json($marcas, 200);
+        } catch (\Exception $e) {
+            // Loga o erro (opcional, mas muito recomendado)
+            Log::error('Erro ao listar marcas: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Retorna erro genérico pro cliente
+            return response()->json([
+                'error' => 'Ocorreu um erro ao buscar as marcas.',
+                'details' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
         }
-        return response()->json($marcas, 200);
     }
 
     /**
