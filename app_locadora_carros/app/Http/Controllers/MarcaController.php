@@ -51,19 +51,13 @@ class MarcaController extends Controller
      */
     public function store(Request $request)
     {
-        // Aplicar a validação
-        $request->validate($this->marca->rules(), $this->marca->feedback());
-
-        $imagem = $request->file('imagem');
-        $imagem_urn = $imagem->store('imagem/marcas', 'public');
-
-        // Criar a marca após a validação
-        $marca = $this->marca->create([
-            'nome' => $request->nome,
-            'imagem' => $imagem_urn
-        ]);
-
-        return response()->json($marca, 201);
+        try {
+            $marca = $this->marcaService->criarMarca($request);
+            return response()->json($marca, 201);
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar marca: ' . $e->getMessage());
+            return response()->json(['error' => 'Erro ao criar marca'], 500);
+        }
     }
 
     /**

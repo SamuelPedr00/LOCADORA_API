@@ -40,4 +40,9 @@ class MarcaRepository implements IMarcaRepository
     {
         return $this->model->destroy($id);
     }
+
+    public function getModel()
+    {
+        return $this->model;
+    }
 }

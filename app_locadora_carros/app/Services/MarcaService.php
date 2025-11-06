@@ -35,4 +35,19 @@ class MarcaService
 
         return $this->marcaRepository->getAll($columns, $relations);
     }
+
+    public function criarMarca(Request $request)
+    {
+        // Aplicar a validação
+        $request->validate($this->marcaRepository->getModel()->rules(), $this->marcaRepository->getModel()->feedback());
+
+        $imagem = $request->file('imagem');
+        $imagem_urn = $imagem->store('imagem/marcas', 'public');
+
+        // Cria a marca
+        return $this->marcaRepository->create([
+            'nome' => $request->nome,
+            'imagem' => $imagem_urn
+        ]);
+    }
 }
