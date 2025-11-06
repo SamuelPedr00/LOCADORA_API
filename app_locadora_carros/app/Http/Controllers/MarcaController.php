@@ -65,21 +65,13 @@ class MarcaController extends Controller
      */
     public function show(Request $request, int $id)
     {
-        // Validação dos atributos (opcional mas recomendado)
-        $atributos = $request->atributos ?? '*';
-
-        if ($request->has('atributos_modelos')) {
-            $atributos_modelos = $request->atributos_modelos;
-            $marca = $this->marca->with('modelos:' . $atributos_modelos)->selectRaw($atributos)->find($id);
-        } else {
-            // Construir a query com os atributos específicos
-            $marca = $this->marca->with('modelos')->selectRaw($atributos)->find($id);
+        try {
+            $marca = $this->marcaService->buscarMarca($request, $id);
+            return response()->json($marca, 200);
+        } catch (\Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 500;
+            return response()->json(['error' => $e->getMessage()], $status);
         }
-
-        if ($marca == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
-        }
-        return response()->json($marca, 200);
     }
 
     /**

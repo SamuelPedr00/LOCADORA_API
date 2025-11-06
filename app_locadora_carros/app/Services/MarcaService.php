@@ -50,4 +50,20 @@ class MarcaService
             'imagem' => $imagem_urn
         ]);
     }
+
+    public function buscarMarca(Request $request, int $id)
+    {
+        // Lê os atributos solicitados
+        $atributos = $request->atributos ?? '*';
+        $atributos_modelos = $request->atributos_modelos ?? null;
+
+        // Busca no repositório
+        $marca = $this->marcaRepository->findWithModelos($id, $atributos, $atributos_modelos);
+
+        if (!$marca) {
+            throw new \Exception('Pesquisa não encontrada', 404);
+        }
+
+        return $marca;
+    }
 }
