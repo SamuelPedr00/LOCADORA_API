@@ -79,56 +79,16 @@ class MarcaController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $marca = $this->marca->find($id);
+        try {
+            $marca = $this->marcaService->atualizarMarca($request, $id);
+            return response()->json($marca, 200);
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar marca: ' . $e->getMessage());
 
-        if ($marca == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+            return response()->json([
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
         }
-
-        // Validação dinâmica para PATCH ou completa para PUT
-        if ($request->method() === 'PATCH') {
-            $regrasDinamicas = array();
-
-            foreach ($marca->rules() as $input => $regra) {
-                if (array_key_exists($input, $request->all())) {
-                    $regrasDinamicas[$input] = $regra;
-                }
-            }
-
-            $request->validate($regrasDinamicas, $marca->feedback());
-        } else {
-            $request->validate($marca->rules(), $marca->feedback());
-        }
-
-        // Preparar dados para atualização
-        $dadosAtualizacao = [];
-
-        // Processar imagem apenas se foi enviada
-        if ($request->hasFile('imagem')) {
-            // Deletar imagem antiga se existir
-            if ($marca->imagem) {
-                Storage::disk('public')->delete($marca->imagem);
-            }
-
-            $imagem = $request->file('imagem');
-            $imagem_urn = $imagem->store('imagens', 'public');
-            $dadosAtualizacao['imagem'] = $imagem_urn;
-        }
-
-        // Adicionar nome apenas se foi enviado (para PATCH)
-        if ($request->has('nome')) {
-            $dadosAtualizacao['nome'] = $request->nome;
-        }
-
-        // Atualizar apenas se houver dados
-        if (!empty($dadosAtualizacao)) {
-            $marca->update($dadosAtualizacao);
-        }
-
-        // Recarregar o modelo para obter dados atualizados
-        $marca->refresh();
-
-        return response()->json($marca, 200);
     }
 
     /**
@@ -136,17 +96,15 @@ class MarcaController extends Controller
      */
     public function destroy(int $id)
     {
-        $marca = $this->marca->find($id);
-        if ($marca == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        try {
+            $mensagem = $this->marcaService->removerMarca($id);
+            return response()->json($mensagem, 200);
+        } catch (\Exception $e) {
+            Log::error('Erro ao remover marca: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
         }
-
-
-        Storage::disk('public')->delete($marca->imagem);
-
-
-        $marca->delete();
-
-        return response()->json(['msg' => 'Marca removida com sucesso!']);
     }
 }

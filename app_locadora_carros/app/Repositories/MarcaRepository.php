@@ -21,7 +21,7 @@ class MarcaRepository implements IMarcaRepository
 
     public function find($id)
     {
-        return $this->model->findOrFail($id);
+        return $this->model->find($id);
     }
 
     public function create(array $data)
@@ -32,13 +32,24 @@ class MarcaRepository implements IMarcaRepository
     public function update($id, array $data)
     {
         $marca = $this->find($id);
+
+        if (!$marca) {
+            return null;
+        }
+
         $marca->update($data);
-        return $marca;
+        return $marca->refresh();
     }
 
     public function delete($id)
     {
-        return $this->model->destroy($id);
+        $marca = $this->find($id);
+
+        if (!$marca) {
+            return false;
+        }
+
+        return $marca->delete();
     }
 
     public function getModel()
