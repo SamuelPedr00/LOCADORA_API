@@ -11,12 +11,10 @@ use Illuminate\Support\Facades\Log;
 class MarcaController extends Controller
 {
     protected $marcaService;
-    protected $marca;
 
-    public function __construct(MarcaService $marcaService, Marca $marca)
+    public function __construct(MarcaService $marcaService)
     {
         $this->marcaService = $marcaService;
-        $this->marca = $marca;
     }
 
     public function index(Request $request)
