@@ -45,4 +45,18 @@ class MarcaRepository implements IMarcaRepository
     {
         return $this->model;
     }
+
+    public function findWithModelos(int $id, string $atributos = '*', ?string $atributos_modelos = null)
+    {
+        $query = $this->model->selectRaw($atributos);
+
+        if ($atributos_modelos) {
+            // Exemplo: modelos:id,nome,marca_id
+            $query->with('modelos:' . $atributos_modelos);
+        } else {
+            $query->with('modelos');
+        }
+
+        return $query->find($id);
+    }
 }

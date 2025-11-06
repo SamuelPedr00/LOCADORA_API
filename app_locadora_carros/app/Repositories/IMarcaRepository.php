@@ -10,4 +10,5 @@ interface IMarcaRepository
     public function update($id, array $data);
     public function delete($id);
     public function getModel();
+    public function findWithModelos(int $id, string $atributos = '*', ?string $atributos_modelos = null);
 }
