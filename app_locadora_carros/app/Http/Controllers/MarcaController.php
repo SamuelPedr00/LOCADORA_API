@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
 use App\Services\MarcaService;
 use Illuminate\Http\Request;
-use App\Models\Marca;
 use Illuminate\Support\Facades\Log;
 
 class MarcaController extends Controller
