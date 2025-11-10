@@ -27,6 +27,6 @@ class Cliente extends Model
 
     public function locacoes()
     {
-        return $this->hasMany(Locacao::class);
+        return $this->hasMany(Locacao::class, 'cliente_id');
     }
 }
