@@ -39,9 +39,9 @@ class Carro extends Model
             'km.min' => 'A quilometragem não pode ser negativa.'
         ];
     }
-    public function modelo()
+    public function modelos()
     {
-        return $this->belongsTo(Modelo::class);
+        return $this->belongsTo(Modelo::class, 'modelo_id');
     }
 
     public function locacoes()

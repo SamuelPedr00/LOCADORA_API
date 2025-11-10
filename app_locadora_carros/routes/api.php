@@ -8,6 +8,7 @@ Route::apiResource('modelo', App\Http\Controllers\ModeloController::class);
 Route::apiResource('cliente', App\Http\Controllers\ClienteController::class);
 Route::apiResource('locacao', App\Http\Controllers\LocacaoController::class);
 Route::apiResource('marca', App\Http\Controllers\MarcaController::class);
+Route::apiResource('carro', App\Http\Controllers\CarroController::class);
 
 
 Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
