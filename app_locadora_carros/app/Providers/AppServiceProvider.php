@@ -9,8 +9,10 @@ use App\Repositories\IClienteRepository;
 use App\Repositories\ILocacaoRepository;
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\IMarcaRepository;
+use App\Repositories\IModeloRepository;
 use App\Repositories\LocacaoRepository;
 use App\Repositories\MarcaRepository;
+use App\Repositories\ModeloRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ICarroRepository::class, CarroRepository::class);
         $this->app->bind(IClienteRepository::class, ClienteRepository::class);
         $this->app->bind(ILocacaoRepository::class, LocacaoRepository::class);
+        $this->app->bind(IModeloRepository::class, ModeloRepository::class);
     }
 
     /**
