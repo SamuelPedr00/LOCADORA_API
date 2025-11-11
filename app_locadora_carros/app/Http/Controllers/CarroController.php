@@ -99,12 +99,25 @@ class CarroController extends Controller
         try {
             $mensagem = $this->carroService->removerCarro($id);
             return response()->json($mensagem, 200);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
             Log::error('Erro ao remover carro: ' . $e->getMessage());
 
+            // 23000 = violação de integridade referencial (foreign key)
+            if ($e->getCode() === '23000') {
+                return response()->json([
+                    'error' => 'Não é possível remover este carro, pois ele está sendo usado em outra tabela.'
+                ], 409); // 409 = Conflict
+            }
+
             return response()->json([
-                'error' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+                'error' => 'Erro no banco de dados: ' . $e->getMessage()
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Erro inesperado ao remover carro: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Erro interno do servidor'
+            ], 500);
         }
     }
 }

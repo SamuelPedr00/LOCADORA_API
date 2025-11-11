@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
-use App\Models\Modelo;
+use App\Services\ModeloService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 
 class ModeloController extends Controller
 {
-    private $modelo;
 
-    public function __construct(Modelo $modelo)
+    protected $modeloService;
+
+    public function __construct(ModeloService $modeloService)
     {
-        $this->modelo = $modelo;
+        $this->modeloService = $modeloService;
     }
     /**
      * Display a listing of the resource.
@@ -20,21 +22,29 @@ class ModeloController extends Controller
     public function index(Request $request)
     {
 
-        if ($request->has('atributos_marca')) {
-            $atributos_marca = $request->atributos_marca;
-            $query = $this->modelo->with('marca:' . $atributos_marca);
-        } else {
-            $query = $this->modelo->with('marca');
+        try {
+            $modelos = $this->modeloService->listarModelos($request);
+
+            if ($modelos->isEmpty()) {
+                return response()->json([
+                    'message' => 'Nenhuma carro encontrada',
+                    'data' => []
+                ], 200);
+            }
+
+            return response()->json($modelos, 200);
+        } catch (\Exception $e) {
+            // Loga o erro (opcional, mas muito recomendado)
+            Log::error('Erro ao listar modelos: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Retorna erro genérico pro cliente
+            return response()->json([
+                'error' => 'Ocorreu um erro ao buscar as modelos.',
+                'details' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
         }
-
-        if ($request->has('atributos')) {
-            $atributos = $request->atributos;
-            $query->selectRaw($atributos);
-        }
-
-        $modelos = $query->get();
-
-        return response()->json($modelos, 200);
     }
 
     /**
@@ -42,24 +52,13 @@ class ModeloController extends Controller
      */
     public function store(Request $request)
     {
-        // Aplicar a validação
-        $request->validate($this->modelo->rules(), $this->modelo->feedback());
-
-        $imagem = $request->file('imagem');
-        $imagem_urn = $imagem->store('imagem/modelos', 'public');
-
-        // Criar o modelo após a validação
-        $modelo = $this->modelo->create([
-            'marca_id' => $request->marca_id,
-            'nome' => $request->nome,
-            'imagem' => $imagem_urn,
-            'numero_portas' => $request->numero_portas,
-            'lugares' => $request->lugares,
-            'air_bag' => $request->air_bag,
-            'abs' => $request->abs
-        ]);
-
-        return response()->json($modelo, 201);
+        try {
+            $modelo = $this->modeloService->criarModelo($request);
+            return response()->json($modelo, 201);
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar modelo: ' . $e->getMessage());
+            return response()->json(['error' => 'Erro ao criar modelo'], 500);
+        }
     }
 
     /**
@@ -67,75 +66,29 @@ class ModeloController extends Controller
      */
     public function show(Request $request, int $id)
     {
-        // Validação dos atributos (opcional mas recomendado)
-        $atributos = $request->atributos ?? '*';
-
-        if ($request->has('atributos_marca')) {
-            $atributos_marca = $request->atributos_marca;
-            $modelo = $this->modelo->with('marca:' . $atributos_marca)->selectRaw($atributos)->find($id);
-        } else {
-            // Construir a query com os atributos específicos
-            $modelo = $this->modelo->with('marca')->selectRaw($atributos)->find($id);
+        try {
+            $modelo = $this->modeloService->buscarModelo($request, $id);
+            return response()->json($modelo, 200);
+        } catch (\Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 500;
+            return response()->json(['error' => $e->getMessage()], $status);
         }
-
-
-
-        if ($modelo == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
-        }
-
-        return response()->json($modelo, 200);
     }
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, int $id)
     {
-        $modelo = $this->modelo->with('marca')->find($id);
-        if ($modelo == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+        try {
+            $modelo = $this->modeloService->atualizarModelo($request, $id);
+            return response()->json($modelo, 200);
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar modelo: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
         }
-
-        // Validação dinâmica para PATCH ou completa para PUT
-        if ($request->method() === 'PATCH') {
-            $regrasDinamicas = array();
-            foreach ($modelo->rules() as $input => $regra) {
-                if (array_key_exists($input, $request->all())) {
-                    $regrasDinamicas[$input] = $regra;
-                }
-            }
-            $request->validate($regrasDinamicas, $modelo->feedback());
-        } else {
-            $request->validate($modelo->rules(), $modelo->feedback());
-        }
-
-        // Preparar dados para atualização
-        $dadosAtualizacao = $request->only([
-            'marca_id',
-            'nome',
-            'imagem',
-            'numero_portas',
-            'lugares',
-            'air_bag',
-            'abs'
-        ]);
-
-        // Processar imagem apenas se foi enviada
-        if ($request->hasFile('imagem')) {
-            // Deletar imagem antiga
-            if ($modelo->imagem) {
-                Storage::disk('public')->delete($modelo->imagem);
-            }
-
-            // Armazenar nova imagem
-            $imagem = $request->file('imagem');
-            $dadosAtualizacao['imagem'] = $imagem->store('imagem', 'public');
-        }
-
-        // Atualizar apenas os campos enviados (importante para PATCH)
-        $modelo->update($dadosAtualizacao);
-
-        return response()->json($modelo, 200);
     }
 
     /**
@@ -143,15 +96,24 @@ class ModeloController extends Controller
      */
     public function destroy(int $id)
     {
-        $modelo = $this->modelo->find($id);
+        try {
+            $mensagem = $this->modeloService->removerModelo($id);
+            return response()->json($mensagem, 200);
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                // Erro de integridade referencial (FK)
+                return response()->json([
+                    'error' => 'Não é possível excluir este modelo pois existem carros associados a ele.'
+                ], 409); // 409 Conflict
+            }
 
-
-        if ($modelo == null) {
-            return response()->json(['error' => 'Pesquisa não encontrada'], 404);
+            Log::error('Erro de banco ao remover modelo: ' . $e->getMessage());
+            return response()->json(['error' => 'Erro no banco de dados.'], 500);
+        } catch (\Exception $e) {
+            Log::error('Erro ao remover modelo: ' . $e->getMessage());
+            $code = (int) $e->getCode();
+            if ($code < 100 || $code > 599) $code = 500;
+            return response()->json(['error' => $e->getMessage()], $code);
         }
-        Storage::disk('public')->delete($modelo->imagem);
-        $modelo->delete();
-
-        return response()->json(['msg' => 'Marca removida com sucesso!']);
     }
 }

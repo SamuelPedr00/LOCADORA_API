@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Locacao;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Services\LocacaoService;
