@@ -30,7 +30,7 @@ class Locacao extends Model
             'data_final_realizado_periodo' => 'nullable|date|after_or_equal:data_inicio_periodo',
             'valor_diaria' => 'required|numeric|min:0',
             'km_inicial' => 'required|numeric|min:0',
-            'km_final' => 'nullable|numeric|min:km_inicial'
+            'km_final' => 'nullable|numeric|min:0|gte:km_inicial'
         ];
     }
 
